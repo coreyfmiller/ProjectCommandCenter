@@ -35,7 +35,7 @@ function SectionHeading({
 
 export default function DashboardPage() {
   return (
-    <main className="mx-auto min-h-svh w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <main className="mx-auto min-h-svh w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       {/* Header */}
       <header className="flex flex-col gap-4 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
           title="Focus Projects"
           description="Ship, sell, invoice. Everything else waits."
         />
-        <div className="mt-6 grid gap-4 lg:grid-cols-3" id="focus-heading">
+        <div className="mt-6 grid gap-4 lg:grid-cols-4" id="focus-heading">
           {focusProjects.map((project) => (
             <FocusCard key={project.id} project={project} />
           ))}
