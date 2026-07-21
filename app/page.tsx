@@ -1,11 +1,11 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
 import { ExecutionTimeline } from '@/components/execution-timeline'
 import { KilledSection } from '@/components/killed-section'
 import { ClientPipeline } from '@/components/client-pipeline'
-import { RevenueMath } from '@/components/revenue-math'
+import { RevenueTracker } from '@/components/revenue-tracker'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -73,16 +73,47 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Revenue math */}
+      {/* Revenue + Quick Actions */}
       <section className="mt-12" aria-labelledby="revenue-heading">
         <SectionHeading
           icon={DollarSign}
-          eyebrow="The Math"
-          title="Revenue Breakdown"
-          description="Conservative 90-day target. No new features required — just sales and marketing."
+          eyebrow="Revenue"
+          title="Track & Act"
+          description="Log revenue as it comes in. Quick-launch your tools."
         />
-        <div className="mt-6" id="revenue-heading">
-          <RevenueMath />
+        <div className="mt-6 grid gap-4 lg:grid-cols-2" id="revenue-heading">
+          <RevenueTracker />
+
+          {/* Quick Actions */}
+          <div className="rounded-xl border border-border bg-card/60 p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <ExternalLink className="size-4 text-primary" />
+              Quick Actions
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Open Duelly', url: 'https://duelly.ai', color: 'border-green-500/30 hover:bg-green-500/5' },
+                { label: 'Open MarketMojo', url: 'https://marketmojo.vercel.app', color: 'border-yellow-500/30 hover:bg-yellow-500/5' },
+                { label: 'Open FundyLaunch', url: 'https://fundylaunch.com', color: 'border-blue-500/30 hover:bg-blue-500/5' },
+                { label: 'Open FundyLogic', url: 'https://fundylogic.vercel.app', color: 'border-purple-500/30 hover:bg-purple-500/5' },
+                { label: 'Prospect (MarketMojo)', url: 'https://marketmojo.vercel.app/search', color: 'border-orange-500/30 hover:bg-orange-500/5' },
+                { label: 'Demo Builder', url: 'https://auto-agency-three.vercel.app/demobuilder', color: 'border-pink-500/30 hover:bg-pink-500/5' },
+                { label: 'Vercel Dashboard', url: 'https://vercel.com/dashboard', color: 'border-border hover:bg-muted/50' },
+                { label: 'Stripe Dashboard', url: 'https://dashboard.stripe.com', color: 'border-border hover:bg-muted/50' },
+              ].map((action) => (
+                <a
+                  key={action.label}
+                  href={action.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium text-foreground transition-colors ${action.color}`}
+                >
+                  <ExternalLink className="size-3 text-muted-foreground" />
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
