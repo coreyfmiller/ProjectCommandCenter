@@ -1,10 +1,11 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
 import { ExecutionTimeline } from '@/components/execution-timeline'
 import { KilledSection } from '@/components/killed-section'
 import { ClientPipeline } from '@/components/client-pipeline'
+import { RevenueMath } from '@/components/revenue-math'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -65,10 +66,23 @@ export default function DashboardPage() {
           title="Focus Projects"
           description="Ship, sell, invoice. Everything else waits."
         />
-        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="focus-heading">
+        <div className="mt-6 grid gap-4 lg:grid-cols-3" id="focus-heading">
           {focusProjects.map((project) => (
             <FocusCard key={project.id} project={project} />
           ))}
+        </div>
+      </section>
+
+      {/* Revenue math */}
+      <section className="mt-12" aria-labelledby="revenue-heading">
+        <SectionHeading
+          icon={DollarSign}
+          eyebrow="The Math"
+          title="Revenue Breakdown"
+          description="Conservative 90-day target. No new features required — just sales and marketing."
+        />
+        <div className="mt-6" id="revenue-heading">
+          <RevenueMath />
         </div>
       </section>
 
