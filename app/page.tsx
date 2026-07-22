@@ -75,6 +75,19 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Sunrise Seedlings */}
+      <section className="mt-12" aria-labelledby="seedlings-heading">
+        <SectionHeading
+          icon={Sprout}
+          eyebrow="Family Business"
+          title="Sunrise Seedlings"
+          description="Heirloom seedlings, herbs, and peppers. 600 units at $8. Teaching the kids real business."
+        />
+        <div className="mt-6" id="seedlings-heading">
+          <SideProjects />
+        </div>
+      </section>
+
       {/* Revenue + Quick Actions */}
       <section className="mt-12" aria-labelledby="revenue-heading">
         <SectionHeading
@@ -170,19 +183,6 @@ export default function DashboardPage() {
         />
         <div className="mt-6" id="clients-heading">
           <ClientPipeline projects={clientProjects} />
-        </div>
-      </section>
-
-      {/* Side Projects */}
-      <section className="mt-12" aria-labelledby="side-heading">
-        <SectionHeading
-          icon={Sprout}
-          eyebrow="Family"
-          title="Side Projects"
-          description="Teaching the kids entrepreneurship. Separate from the tech business."
-        />
-        <div className="mt-6" id="side-heading">
-          <SideProjects />
         </div>
       </section>
 
