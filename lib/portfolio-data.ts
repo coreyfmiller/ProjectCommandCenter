@@ -307,6 +307,61 @@ export const killedProjects: KilledProject[] = [
   },
 ]
 
+// ─── SIDE PROJECTS (FAMILY) ─────────────────────────────────────────────────
+
+export interface SideProject {
+  id: string
+  name: string
+  description: string
+  status: string
+  financials: {
+    investment: number
+    investmentSource: string
+    revenueTarget: number
+    revenueModel: string
+    breakeven: string
+  }
+  assets: string[]
+  tasks: string[]
+  timeline: string
+}
+
+export const sideProjects: SideProject[] = [
+  {
+    id: 'sunrise-seedlings',
+    name: 'Sunrise Seedlings',
+    description: 'Kids\' seedling business — grow 500+ seedlings indoors under LED lights, harden in hot frames, sell at $6-$8 each. Teaches the kids entrepreneurship. Leverages NB student grant for $3K startup supplies.',
+    status: 'Planning',
+    financials: {
+      investment: 3000,
+      investmentSource: 'NB Student Enterprise Grant (borrow/grant — research eligibility)',
+      revenueTarget: 3500,
+      revenueModel: '500 seedlings × $6-$8 avg = $3,000-$4,000 gross',
+      breakeven: 'Sell ~430 seedlings at $7 avg to cover $3K loan',
+    },
+    assets: [
+      '2× 400W LED grow lights (owned)',
+      '1× 250W LED grow light (owned)',
+      'Large deck for hardening/display',
+      'Available land for hot frames',
+      'Existing Sunrise Seedlings website + brand',
+    ],
+    tasks: [
+      'Research NB student enterprise grants — confirm eligibility and application process',
+      'Budget $3K: seeds, pots, soil, fertilizer, shelving, hot frame lumber',
+      'Build 4×8 hot frames (2-3 units) for hardening off',
+      'Source seeds: focus on premium/heirloom varieties that justify $6-$8 pricing',
+      'Plan fertilization schedule — healthy plants = premium pricing = stand out',
+      'Set up indoor grow station: shelving, lights, timer, heat mats',
+      'Start seeds indoors (timing: 6-8 weeks before last frost)',
+      'Harden off in hot frames (2 weeks before sale)',
+      'Set up sales: deck display, sunriseseedlings.com orders, farmers market?',
+      'Track costs vs revenue — teach kids P&L',
+    ],
+    timeline: 'Plan now (winter) → Start seeds (Feb/Mar) → Sell (May/Jun)',
+  },
+]
+
 // ─── CLIENT PIPELINE ────────────────────────────────────────────────────────
 
 export const clientProjects: ClientProject[] = [

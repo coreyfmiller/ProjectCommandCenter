@@ -1,4 +1,4 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
@@ -7,6 +7,7 @@ import { KilledSection } from '@/components/killed-section'
 import { ClientPipeline } from '@/components/client-pipeline'
 import { RevenueTracker } from '@/components/revenue-tracker'
 import { FinancialMilestones } from '@/components/financial-milestones'
+import { SideProjects } from '@/components/side-projects'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -169,6 +170,19 @@ export default function DashboardPage() {
         />
         <div className="mt-6" id="clients-heading">
           <ClientPipeline projects={clientProjects} />
+        </div>
+      </section>
+
+      {/* Side Projects */}
+      <section className="mt-12" aria-labelledby="side-heading">
+        <SectionHeading
+          icon={Sprout}
+          eyebrow="Family"
+          title="Side Projects"
+          description="Teaching the kids entrepreneurship. Separate from the tech business."
+        />
+        <div className="mt-6" id="side-heading">
+          <SideProjects />
         </div>
       </section>
 
