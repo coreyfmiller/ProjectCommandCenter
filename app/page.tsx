@@ -1,4 +1,4 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout, ListChecks } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
@@ -8,6 +8,7 @@ import { ClientPipeline } from '@/components/client-pipeline'
 import { RevenueTracker } from '@/components/revenue-tracker'
 import { FinancialMilestones } from '@/components/financial-milestones'
 import { SideProjects } from '@/components/side-projects'
+import { TodaySection } from '@/components/today-section'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -58,6 +59,11 @@ export default function DashboardPage() {
       {/* Stats */}
       <section className="mt-8">
         <StatsBar />
+      </section>
+
+      {/* Today */}
+      <section className="mt-8">
+        <TodaySection />
       </section>
 
       {/* Focus projects */}
