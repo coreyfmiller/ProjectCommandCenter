@@ -335,7 +335,7 @@ export const sideProjects: SideProject[] = [
     financials: {
       investment: 3000,
       investmentSource: 'NB Student Enterprise Grant (borrow/grant — research eligibility)',
-      revenueTarget: 3500,
+      revenueTarget: 4000,
       revenueModel: '500 seedlings × $6-$8 avg = $3,000-$4,000 gross',
       breakeven: 'Sell ~430 seedlings at $7 avg to cover $3K loan',
     },
