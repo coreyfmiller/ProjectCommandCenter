@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, ArrowRight, Coins, Code2, Users, Clock, ChevronDown, ChevronUp, DollarSign, Globe } from 'lucide-react'
 import type { FocusProject, FocusStatus } from '@/lib/portfolio-data'
+import { getCompletedTasks, toggleTask } from '@/lib/local-store'
 
 const statusStyles: Record<FocusStatus, string> = {
   live: 'border-success/40 bg-success/15 text-success',
@@ -19,6 +20,20 @@ const dotStyles: Record<FocusStatus, string> = {
 export function FocusCard({ project }: { project: FocusProject }) {
   const [done, setDone] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [completed, setCompleted] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    setCompleted(getCompletedTasks())
+  }, [])
+
+  const handleTaskToggle = (taskId: string) => {
+    const updated = toggleTask(taskId)
+    setCompleted(new Set(updated))
+  }
+
+  const taskIds = (project.tasks || []).map((_, i) => `focus-${project.id}-${i}`)
+  const tasksDone = taskIds.filter(id => completed.has(id)).length
+  const tasksTotal = project.tasks?.length || 0
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40">
@@ -152,6 +167,40 @@ export function FocusCard({ project }: { project: FocusProject }) {
                     {feature}
                   </li>
                 ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Tasks checklist */}
+          {project.tasks && project.tasks.length > 0 && (
+            <div>
+              <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                Action Items ({tasksDone}/{tasksTotal})
+              </div>
+              <div className="h-1 w-full rounded-full bg-border mb-2 overflow-hidden">
+                <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${tasksTotal > 0 ? (tasksDone / tasksTotal) * 100 : 0}%` }} />
+              </div>
+              <ul className="space-y-1 max-h-48 overflow-y-auto">
+                {project.tasks.map((task, i) => {
+                  const taskId = `focus-${project.id}-${i}`
+                  const isDone = completed.has(taskId)
+                  return (
+                    <li key={taskId}>
+                      <button
+                        type="button"
+                        onClick={() => handleTaskToggle(taskId)}
+                        className="flex items-start gap-2 text-left w-full group"
+                      >
+                        <span className={`mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded border transition-colors ${isDone ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40 group-hover:border-primary/60'}`}>
+                          {isDone && <Check className="size-2" />}
+                        </span>
+                        <span className={`text-[0.65rem] leading-relaxed ${isDone ? 'text-muted-foreground/40 line-through' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                          {task}
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}

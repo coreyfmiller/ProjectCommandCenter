@@ -21,6 +21,7 @@ export type FocusProject = {
   url?: string
   features?: string[]
   pricing?: { name: string; price: string; note?: string }[]
+  tasks?: string[]
 }
 
 export type ParkedProject = {
@@ -100,6 +101,17 @@ export const focusProjects: FocusProject[] = [
       { name: 'Visibility Growth Bundle', price: '$149.99', note: '550 credits — best value' },
       { name: 'Authority Agency Suite', price: '$299.99', note: '1,450 credits — for agencies' },
     ],
+    tasks: [
+      'Fix onboarding flow — signup to first free audit in under 3 minutes',
+      'Write blog post: "Is Your Business Invisible to ChatGPT?"',
+      'Write blog post: "SEO vs AEO — What Changed in 2026"',
+      'Post anonymized audit results on Reddit (r/SEO, r/smallbusiness, r/Entrepreneur)',
+      'Reach out to 10 SEO agencies about the Authority Agency Suite ($299)',
+      'Create a demo video / screen recording for the landing page',
+      'Run a limited Reddit ad campaign if organic posts get traction',
+      'Add monthly monitoring subscription (recurring revenue feature)',
+      'Collect first 3 testimonials from users',
+    ],
   },
   {
     id: 'marketmojo',
@@ -136,6 +148,18 @@ export const focusProjects: FocusProject[] = [
       { name: 'Pro', price: '$95/mo', note: '100 scans + AI emails + batch scanning' },
       { name: 'Agency', price: '$225/mo', note: '250 scans + white-label + priority support' },
     ],
+    tasks: [
+      'Run SQL migration in Supabase (plan, stripe_customer_id, stripe_subscription_id columns)',
+      'Test checkout end-to-end with Stripe test card (4242...)',
+      'Confirm credits land after subscription purchase',
+      'Test credit deduction — scan a business, confirm credit decreases',
+      'Post in r/webdev, r/freelance, agency Slack/Discord groups',
+      'Create a 60-second demo video showing search → scan → report flow',
+      'Use MarketMojo to scan your own 9 prospect businesses',
+      'Generate PDF reports for top 5 prospects',
+      'Send personalized outreach to all 9 prospects using the email drafter',
+      'Get first paying subscriber',
+    ],
   },
   {
     id: 'fundylaunch',
@@ -167,6 +191,18 @@ export const focusProjects: FocusProject[] = [
       { name: 'Growth Starter', price: '$5,500', note: 'one-time — website + aggressive local SEO' },
       { name: 'Full Growth Partner', price: '$1,500/mo', note: '3-month minimum — complete acquisition system' },
       { name: 'Blog Content Engine', price: '$600/mo', note: 'add-on — 4 SEO posts/month, auto-published' },
+    ],
+    tasks: [
+      'Optimize OG image (1200×630 via squoosh.app) and push to /public/og-image.png',
+      'Build 8 industry demo sites (v0.dev) and add to portfolio',
+      'Push portfolio update with industry showcase section',
+      'Use MarketMojo to scan all 9 warm prospects',
+      'Send cold outreach emails with PDF audit reports',
+      'Book 3 discovery calls from prospect list',
+      'Close first $3,500 Website Launch client',
+      'Deliver first client site within 2-3 weeks of signing',
+      'Ask for testimonial after delivery',
+      'Set up recurring blog content workflow for client upsell',
     ],
   },
   {
@@ -201,6 +237,18 @@ export const focusProjects: FocusProject[] = [
       { name: 'Growth Agent', price: '$2,500 + $347/mo', note: 'chat + scoring + emails + internal bot' },
       { name: 'AI MVP', price: '$10K–$25K', note: 'full SaaS product build' },
       { name: 'Full Platform', price: '$25K–$50K', note: 'multi-feature AI product' },
+    ],
+    tasks: [
+      'Brother: identify 10 local businesses that could use a chat agent',
+      'Build a live demo chat agent on fundylogic.com (already have LOGIC — refine it)',
+      'Create a 1-page case study: "How our AI agent works for RP Miller Consulting"',
+      'Brother: pitch 5 businesses with the demo + case study',
+      'Close first $1,500 setup + $197/mo agent client',
+      'Build and deploy the first client agent (chat widget on their site)',
+      'Monitor agent conversations for first 2 weeks, tune responses',
+      'Ask for testimonial after 30 days',
+      'Document the build process so you can repeat it faster',
+      'Explore voice AI (Vapi/Bland.ai) for future phone-answering tier',
     ],
   },
 ]
