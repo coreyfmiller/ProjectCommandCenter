@@ -1,4 +1,4 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
@@ -6,6 +6,7 @@ import { ExecutionTimeline } from '@/components/execution-timeline'
 import { KilledSection } from '@/components/killed-section'
 import { ClientPipeline } from '@/components/client-pipeline'
 import { RevenueTracker } from '@/components/revenue-tracker'
+import { FinancialMilestones } from '@/components/financial-milestones'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -114,6 +115,19 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Financial Milestones */}
+      <section className="mt-12" aria-labelledby="milestones-heading">
+        <SectionHeading
+          icon={Flag}
+          eyebrow="Long Game"
+          title="Financial Milestones"
+          description="Business revenue → workshop → carport → rental property. One step at a time."
+        />
+        <div className="mt-6" id="milestones-heading">
+          <FinancialMilestones />
         </div>
       </section>
 
