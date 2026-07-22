@@ -16,8 +16,8 @@ const milestones = [
   {
     id: 'workshop',
     target: 10000,
-    label: 'Full Workshop',
-    description: 'Insulate, refinish upstairs, electrical, heated year-round office/workshop.',
+    label: 'Home Office',
+    description: 'Gut the garage upstairs, insulate, finish into a proper office. Heated, year-round workspace.',
     icon: Wrench,
     color: 'text-orange-500',
   },
