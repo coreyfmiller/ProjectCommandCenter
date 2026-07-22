@@ -358,6 +358,7 @@ export const sideProjects: SideProject[] = [
       'Harden off in hot frames (2 weeks before sale)',
       'Set up sales: deck display, sunriseseedlings.com, possible farmers market booth',
       'Build kids business tracker (loan, expenses, sales, profit)',
+      'Add pre-order system to sunriseseedlings.com (Stripe checkout, variety selection, pickup date)',
     ],
     timeline: 'Plan now (winter) → Start seeds (Feb/Mar) → Sell (May/Jun)',
   },
