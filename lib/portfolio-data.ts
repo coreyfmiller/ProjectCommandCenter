@@ -338,6 +338,7 @@ export const timelinePhases: TimelinePhase[] = [
       'Copy Duelly\'s Stripe pattern: lib/stripe.ts, api/stripe/checkout, api/stripe/webhook',
       'Test MarketMojo payment flow end-to-end',
       'Fix Duelly onboarding — signup to free audit in under 3 min',
+      'Optimize FundyLaunch OG image (1200×630, squoosh.app) and push to /public/og-image.png',
       'Delete FundyAdvantage folder',
       'Merge KVLaunch content into FundyLaunch',
       'Delete IdeaGen and Refresh Factory (dupe) folders',
