@@ -1,22 +1,48 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sprout, DollarSign, Package, CheckSquare, Calendar, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Sprout, DollarSign, Package, CheckSquare, Calendar, ChevronDown, ChevronUp, Check, Plus, Trash2 } from 'lucide-react'
 import { sideProjects, type SideProject } from '@/lib/portfolio-data'
-import { getCompletedTasks, toggleTask } from '@/lib/local-store'
+import { getCompletedTasks, toggleTask, getSeedlingsRevenue, addSeedlingsRevenue, removeSeedlingsRevenue, type RevenueEntry } from '@/lib/local-store'
 
 export function SideProjects() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [completed, setCompleted] = useState<Set<string>>(new Set())
+  const [seedlingsEntries, setSeedlingsEntries] = useState<RevenueEntry[]>([])
+  const [showSeedlingsForm, setShowSeedlingsForm] = useState(false)
+  const [seedDesc, setSeedDesc] = useState('')
+  const [seedAmount, setSeedAmount] = useState('')
 
   useEffect(() => {
     setCompleted(getCompletedTasks())
+    setSeedlingsEntries(getSeedlingsRevenue())
   }, [])
 
   const handleToggle = (taskId: string) => {
     const updated = toggleTask(taskId)
     setCompleted(new Set(updated))
   }
+
+  const handleAddSeedlings = () => {
+    if (!seedDesc.trim() || !seedAmount) return
+    const updated = addSeedlingsRevenue({
+      date: new Date().toISOString().split('T')[0],
+      source: 'seedlings',
+      description: seedDesc.trim(),
+      amount: parseFloat(seedAmount),
+    })
+    setSeedlingsEntries(updated)
+    setSeedDesc('')
+    setSeedAmount('')
+    setShowSeedlingsForm(false)
+  }
+
+  const handleRemoveSeedlings = (id: string) => {
+    const updated = removeSeedlingsRevenue(id)
+    setSeedlingsEntries(updated)
+  }
+
+  const seedlingsTotal = seedlingsEntries.reduce((sum, e) => sum + e.amount, 0)
 
   return (
     <div className="space-y-4">
@@ -138,6 +164,87 @@ export function SideProjects() {
                       )
                     })}
                   </ul>
+                </div>
+
+                {/* Seedlings Revenue Tracker */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Revenue ({seedlingsEntries.length} sales)
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowSeedlingsForm(s => !s)}
+                      className="flex items-center gap-1 text-[0.65rem] text-green-500 hover:text-green-400 transition-colors"
+                    >
+                      <Plus className="size-3" /> Log Sale
+                    </button>
+                  </div>
+
+                  {/* Progress toward target */}
+                  <div className="mb-3">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="font-mono text-lg font-bold text-green-500">${seedlingsTotal.toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">/ ${project.financials.revenueTarget.toLocaleString()}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+                      <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${Math.min((seedlingsTotal / project.financials.revenueTarget) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+
+                  {showSeedlingsForm && (
+                    <div className="mb-3 rounded-lg border border-green-500/30 bg-green-500/5 p-2.5 space-y-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. '12 tomato seedlings sold'"
+                        value={seedDesc}
+                        onChange={e => setSeedDesc(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleAddSeedlings()}
+                        className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Amount $"
+                          value={seedAmount}
+                          onChange={e => setSeedAmount(e.target.value)}
+                          className="w-24 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddSeedlings}
+                          disabled={!seedDesc.trim() || !seedAmount}
+                          className="flex-1 rounded-md bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500/90 disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {seedlingsEntries.length > 0 && (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {seedlingsEntries.map(entry => (
+                        <div key={entry.id} className="flex items-center justify-between rounded bg-background/50 px-2 py-1.5 group">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Sprout className="size-3 text-green-500 shrink-0" />
+                            <span className="text-xs text-foreground truncate">{entry.description}</span>
+                            <span className="text-[0.6rem] text-muted-foreground shrink-0">{entry.date}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="font-mono text-xs font-semibold text-green-500">+${entry.amount}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSeedlings(entry.id)}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-400 transition-all"
+                            >
+                              <Trash2 className="size-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

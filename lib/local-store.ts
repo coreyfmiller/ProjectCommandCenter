@@ -31,6 +31,7 @@ export interface WeeklyNote {
 const KEYS = {
   completedTasks: 'cc_completed_tasks',
   revenue: 'cc_revenue_entries',
+  seedlingsRevenue: 'cc_seedlings_revenue',
   pipeline: 'cc_pipeline',
   weeklyNotes: 'cc_weekly_notes',
 } as const
@@ -117,4 +118,28 @@ export function saveWeeklyNote(note: WeeklyNote): WeeklyNote[] {
   }
   localStorage.setItem(KEYS.weeklyNotes, JSON.stringify(notes))
   return notes
+}
+
+
+// ─── Seedlings Revenue (separate from FundyLogic) ───────────────────────────
+
+export function getSeedlingsRevenue(): RevenueEntry[] {
+  if (typeof window === 'undefined') return []
+  const raw = localStorage.getItem(KEYS.seedlingsRevenue)
+  if (!raw) return []
+  return JSON.parse(raw)
+}
+
+export function addSeedlingsRevenue(entry: Omit<RevenueEntry, 'id'>): RevenueEntry[] {
+  const entries = getSeedlingsRevenue()
+  const newEntry: RevenueEntry = { ...entry, id: `seed-${Date.now()}` }
+  entries.unshift(newEntry)
+  localStorage.setItem(KEYS.seedlingsRevenue, JSON.stringify(entries))
+  return entries
+}
+
+export function removeSeedlingsRevenue(id: string): RevenueEntry[] {
+  const entries = getSeedlingsRevenue().filter(e => e.id !== id)
+  localStorage.setItem(KEYS.seedlingsRevenue, JSON.stringify(entries))
+  return entries
 }
