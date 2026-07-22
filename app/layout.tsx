@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { SyncProvider } from '@/components/sync-provider'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
@@ -43,7 +44,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark bg-background ${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased">
-        {children}
+        <SyncProvider>
+          {children}
+        </SyncProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
