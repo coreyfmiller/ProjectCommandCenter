@@ -46,6 +46,7 @@ interface HistoryEntry {
 }
 
 const SENDER_OPTIONS = [
+  { label: "Corey @ Duelly", value: "corey@duelly.ai", name: "Corey Miller" },
   { label: "Corey @ FundyLaunch", value: "hello@fundylaunch.com", name: "Corey at FundyLaunch" },
   { label: "Corey @ FundyLogic", value: "hello@fundylogic.com", name: "Corey at FundyLogic" },
 ]

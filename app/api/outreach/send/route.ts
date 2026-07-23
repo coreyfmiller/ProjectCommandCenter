@@ -43,10 +43,11 @@ export async function POST(req: NextRequest) {
 
     // Determine sender
     const validSenders: Record<string, string> = {
+      "corey@duelly.ai": "Corey Miller",
       "hello@fundylaunch.com": "Corey at FundyLaunch",
       "hello@fundylogic.com": "Corey at FundyLogic",
     }
-    const fromEmail = senderEmail && validSenders[senderEmail] ? senderEmail : "hello@fundylaunch.com"
+    const fromEmail = senderEmail && validSenders[senderEmail] ? senderEmail : "corey@duelly.ai"
     const fromName = validSenders[fromEmail]
     const from = `${fromName} <${fromEmail}>`
 
