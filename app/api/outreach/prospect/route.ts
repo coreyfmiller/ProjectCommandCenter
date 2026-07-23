@@ -4,6 +4,7 @@ export const maxDuration = 60
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || ""
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || ""
 
 export type WebPresence = "website" | "facebook-only" | "dead-site" | "none"
 
@@ -18,11 +19,67 @@ export interface Prospect {
   category?: string
   webPresence: WebPresence
   siteStatus?: string
+  foundEmails: string[]
   generatedEmail?: { subject: string; body: string }
 }
 
 function isSocialUrl(url: string): boolean {
   return /facebook\.com|instagram\.com|yelp\.com|twitter\.com|x\.com|tiktok\.com/i.test(url)
+}
+
+function extractEmails(html: string): string[] {
+  const emailSet = new Set<string>()
+  const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g
+  const matches = html.match(emailRegex)
+  if (matches) {
+    for (const email of matches) {
+      const lower = email.toLowerCase()
+      if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".gif") ||
+          lower.endsWith(".svg") || lower.endsWith(".css") || lower.endsWith(".js") ||
+          lower.includes("example.com") || lower.includes("sentry") ||
+          lower.includes("webpack") || lower.includes("@2x") ||
+          lower.includes("wixpress") || lower.includes("schema.org")) continue
+      emailSet.add(lower)
+    }
+  }
+  return Array.from(emailSet).slice(0, 3)
+}
+
+async function findEmailPerplexity(name: string, address: string): Promise<string[]> {
+  if (!PERPLEXITY_API_KEY) return []
+  try {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [
+          {
+            role: "system",
+            content: `You find business contact emails. Return ONLY a JSON object: { "emails": ["email@example.com"] }. If none found, return { "emails": [] }. No markdown.`,
+          },
+          {
+            role: "user",
+            content: `Find the contact email for: "${name}" at "${address}". Check their website, Google Business, Facebook, directories.`,
+          },
+        ],
+        max_tokens: 300,
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    const content = data.choices?.[0]?.message?.content || ""
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return []
+    const parsed = JSON.parse(jsonMatch[0])
+    return parsed.emails || []
+  } catch {
+    return []
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -72,12 +129,13 @@ export async function POST(req: NextRequest) {
     const searchData = await searchRes.json()
     const places = searchData.places || []
 
-    // Step 3: Classify each prospect
+    // Step 3: Classify each prospect, check site, scrape emails
     const prospects: Prospect[] = await Promise.all(
       places.map(async (place: any) => {
         const website = place.websiteUri || undefined
         let webPresence: WebPresence = "none"
         let siteStatus = "No website"
+        let scrapedEmails: string[] = []
 
         if (website) {
           if (isSocialUrl(website)) {
@@ -86,11 +144,13 @@ export async function POST(req: NextRequest) {
           } else {
             try {
               const check = await fetch(website, {
-                method: "HEAD",
                 signal: AbortSignal.timeout(5000),
                 redirect: "follow",
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
               })
               if (check.ok) {
+                const html = await check.text()
+                scrapedEmails = extractEmails(html)
                 webPresence = "website"
                 siteStatus = "Site loads"
               } else {
@@ -115,6 +175,7 @@ export async function POST(req: NextRequest) {
           category: place.primaryTypeDisplayName?.text || undefined,
           webPresence,
           siteStatus,
+          foundEmails: scrapedEmails,
         }
       })
     )
@@ -122,7 +183,16 @@ export async function POST(req: NextRequest) {
     // Step 4: Filter to prospects that need help
     const needsHelp = prospects.filter((p) => p.webPresence !== "website")
 
-    // Step 5: Generate personalized emails
+    // Step 5: Find emails via Perplexity for those without scraped emails
+    const emailPromises = needsHelp
+      .filter((p) => p.foundEmails.length === 0)
+      .map(async (p) => {
+        const emails = await findEmailPerplexity(p.name, p.address)
+        p.foundEmails = emails
+      })
+    await Promise.all(emailPromises)
+
+    // Step 6: Generate personalized emails
     if (needsHelp.length > 0) {
       const descriptions = needsHelp
         .map((p, i) => {

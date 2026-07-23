@@ -27,6 +27,7 @@ interface Prospect {
   reviewCount?: number
   webPresence: "website" | "facebook-only" | "dead-site" | "none"
   siteStatus?: string
+  foundEmails: string[]
   generatedEmail?: { subject: string; body: string }
 }
 
@@ -84,12 +85,24 @@ export function OutreachPanel() {
       if (data.error) {
         setError(data.error)
       } else {
-        setProspects(data.prospects || [])
+        const foundProspects = data.prospects || []
+        setProspects(foundProspects)
         setSearchMeta({
           totalFound: data.totalFound,
           needsHelp: data.needsHelp,
           withSite: data.withSite,
         })
+        // Auto-populate emails from foundEmails and auto-select those with emails
+        const autoEmails: Record<string, string> = {}
+        const autoSelected = new Set<string>()
+        foundProspects.forEach((p: Prospect) => {
+          if (p.foundEmails && p.foundEmails.length > 0) {
+            autoEmails[p.id] = p.foundEmails[0]
+            autoSelected.add(p.id)
+          }
+        })
+        setEmails(autoEmails)
+        setSelected(autoSelected)
       }
     } catch {
       setError("Search failed. Check your connection.")
@@ -265,13 +278,31 @@ export function OutreachPanel() {
                     {/* Email input */}
                     {selected.has(p.id) && (
                       <div className="mt-2">
-                        <input
-                          type="email"
-                          placeholder="Enter their email address to send"
-                          value={emails[p.id] || ""}
-                          onChange={(e) => setEmails((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                          className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="email"
+                            placeholder="Enter their email address to send"
+                            value={emails[p.id] || ""}
+                            onChange={(e) => setEmails((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                            className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                          />
+                          {p.foundEmails && p.foundEmails.length > 0 && (
+                            <span className="shrink-0 text-[10px] text-green-500 font-medium">Auto-found</span>
+                          )}
+                        </div>
+                        {p.foundEmails && p.foundEmails.length > 1 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {p.foundEmails.slice(1).map((e) => (
+                              <button
+                                key={e}
+                                onClick={() => setEmails((prev) => ({ ...prev, [p.id]: e }))}
+                                className="text-[10px] text-primary hover:underline"
+                              >
+                                alt: {e}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
