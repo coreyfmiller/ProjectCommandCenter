@@ -15,7 +15,9 @@ const STAGES: { id: ProspectStage; label: string; color: string }[] = [
 ]
 
 export function ClientPipeline({ projects }: { projects: ClientProject[] }) {
-  const [statuses, setStatuses] = useState<Record<string, { stage: ProspectStage; value?: number }>>({})
+  const [statuses, setStatuses] = useState<Record<string, { stage: ProspectStage; value?: number; price?: string }>>({})
+  const [editingPrice, setEditingPrice] = useState<string | null>(null)
+  const [priceInput, setPriceInput] = useState("")
 
   useEffect(() => {
     setStatuses(getPipelineStatuses())
@@ -24,20 +26,27 @@ export function ClientPipeline({ projects }: { projects: ClientProject[] }) {
   const active = projects.filter((p) => p.status === 'active')
   const prospects = projects.filter((p) => p.status === 'prospect')
 
-  const handleAdvance = (id: string, currentStage: ProspectStage) => {
-    const currentIdx = STAGES.findIndex(s => s.id === currentStage)
-    const nextStage = STAGES[Math.min(currentIdx + 1, STAGES.length - 2)] // skip 'lost'
-    const updated = updateProspectStage(id, nextStage.id)
-    setStatuses({ ...updated })
-  }
-
   const handleStageClick = (id: string, stage: ProspectStage) => {
     const updated = updateProspectStage(id, stage)
     setStatuses({ ...updated })
   }
 
+  const handlePriceSave = (id: string) => {
+    const current = statuses[id] || { id, stage: 'cold' as ProspectStage }
+    const updatedStatuses = { ...statuses }
+    updatedStatuses[id] = { ...current, price: priceInput.trim() }
+    localStorage.setItem('cc_pipeline', JSON.stringify(updatedStatuses))
+    setStatuses(updatedStatuses)
+    setEditingPrice(null)
+    setPriceInput("")
+  }
+
   const getProspectStage = (id: string): ProspectStage => {
     return statuses[id]?.stage || 'cold'
+  }
+
+  const getProspectPrice = (id: string, fallback?: string): string => {
+    return (statuses[id] as any)?.price || fallback || ""
   }
 
   const wonCount = prospects.filter(p => getProspectStage(p.id) === 'won').length
@@ -79,12 +88,13 @@ export function ClientPipeline({ projects }: { projects: ClientProject[] }) {
           </h3>
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <DollarSign className="size-3" />
-            Click stages to advance
+            Click stages or price to edit
           </span>
         </div>
         <div className="space-y-2">
           {prospects.map((project) => {
             const stage = getProspectStage(project.id)
+            const price = getProspectPrice(project.id, project.value)
             const stageConfig = STAGES.find(s => s.id === stage)!
 
             return (
@@ -132,8 +142,35 @@ export function ClientPipeline({ projects }: { projects: ClientProject[] }) {
                   </button>
                 </div>
 
-                {project.value && (
-                  <span className="shrink-0 font-mono text-[0.6rem] text-muted-foreground">{project.value}</span>
+                {/* Editable price */}
+                {editingPrice === project.id ? (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handlePriceSave(project.id) }}
+                    className="shrink-0"
+                  >
+                    <input
+                      type="text"
+                      value={priceInput}
+                      onChange={(e) => setPriceInput(e.target.value)}
+                      onBlur={() => handlePriceSave(project.id)}
+                      placeholder="Free, $4K, etc"
+                      autoFocus
+                      className="w-20 rounded border border-border bg-muted px-1.5 py-0.5 text-[0.65rem] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingPrice(project.id)
+                      setPriceInput(price)
+                    }}
+                    className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[0.65rem] transition-colors hover:bg-muted ${
+                      price ? (price.toLowerCase() === 'free' ? 'text-green-500' : 'text-muted-foreground') : 'text-muted-foreground/40 italic'
+                    }`}
+                    title="Click to set price"
+                  >
+                    {price || 'set price'}
+                  </button>
                 )}
               </div>
             )
