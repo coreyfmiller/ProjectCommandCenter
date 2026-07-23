@@ -1,4 +1,4 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout, ListChecks } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout, ListChecks, Megaphone } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
@@ -9,6 +9,7 @@ import { RevenueTracker } from '@/components/revenue-tracker'
 import { FinancialMilestones } from '@/components/financial-milestones'
 import { SideProjects } from '@/components/side-projects'
 import { TodaySection } from '@/components/today-section'
+import { OutreachPanel } from '@/components/outreach-panel'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -148,6 +149,19 @@ export default function DashboardPage() {
         />
         <div className="mt-6" id="milestones-heading">
           <FinancialMilestones />
+        </div>
+      </section>
+
+      {/* Outreach Pipeline */}
+      <section className="mt-12" aria-labelledby="outreach-heading">
+        <SectionHeading
+          icon={Megaphone}
+          eyebrow="Sales"
+          title="Outreach Pipeline"
+          description="Find local trades that need a website. Generate personalized emails. Send with one click."
+        />
+        <div className="mt-6" id="outreach-heading">
+          <OutreachPanel />
         </div>
       </section>
 
