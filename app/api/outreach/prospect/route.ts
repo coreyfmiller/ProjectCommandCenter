@@ -20,7 +20,16 @@ export interface Prospect {
   webPresence: WebPresence
   siteStatus?: string
   foundEmails: string[]
+  competitorContext?: string
   generatedEmail?: { subject: string; body: string }
+}
+
+interface PlaceBusiness {
+  name: string
+  website?: string
+  rating?: number
+  reviewCount?: number
+  webPresence: WebPresence
 }
 
 function isSocialUrl(url: string): boolean {
@@ -106,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not geocode location" }, { status: 400 })
     }
 
-    // Step 2: Search for businesses
+    // Step 2: Search for ALL businesses in this trade/area
     const searchRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
       headers: {
@@ -129,8 +138,8 @@ export async function POST(req: NextRequest) {
     const searchData = await searchRes.json()
     const places = searchData.places || []
 
-    // Step 3: Classify each prospect, check site, scrape emails
-    const prospects: Prospect[] = await Promise.all(
+    // Step 3: Classify every business and scrape emails
+    const allBusinesses: (Prospect & { isProspect: boolean })[] = await Promise.all(
       places.map(async (place: any) => {
         const website = place.websiteUri || undefined
         let webPresence: WebPresence = "none"
@@ -176,14 +185,30 @@ export async function POST(req: NextRequest) {
           webPresence,
           siteStatus,
           foundEmails: scrapedEmails,
+          isProspect: webPresence !== "website",
         }
       })
     )
 
-    // Step 4: Filter to prospects that need help
-    const needsHelp = prospects.filter((p) => p.webPresence !== "website")
+    // Step 4: Build competition context (what competitors HAVE that prospects DON'T)
+    const withSites = allBusinesses.filter((b) => b.webPresence === "website")
+    const needsHelp = allBusinesses.filter((b) => b.isProspect)
 
-    // Step 5: Find emails via Perplexity for those without scraped emails
+    const competitionSummary = withSites.length > 0
+      ? `Competitors with working websites in ${location}: ${withSites.map((b) => `${b.name} (${b.rating || "no"} rating, ${b.reviewCount || 0} reviews)`).join(", ")}.`
+      : `Very few competitors have proper websites in ${location} — first mover advantage.`
+
+    // Add competition context to each prospect
+    needsHelp.forEach((p) => {
+      const betterCompetitors = withSites.filter((c) => (c.rating || 0) >= (p.rating || 0))
+      if (betterCompetitors.length > 0) {
+        p.competitorContext = `${betterCompetitors.length} competitors in ${location} already have websites and are ranking above them. Top competitor: ${betterCompetitors[0].name} (${betterCompetitors[0].rating} stars, ${betterCompetitors[0].reviewCount} reviews, live website).`
+      } else {
+        p.competitorContext = `Few competitors in the area have proper websites yet — early mover opportunity.`
+      }
+    })
+
+    // Step 5: Find emails via Perplexity for those without
     const emailPromises = needsHelp
       .filter((p) => p.foundEmails.length === 0)
       .map(async (p) => {
@@ -192,32 +217,36 @@ export async function POST(req: NextRequest) {
       })
     await Promise.all(emailPromises)
 
-    // Step 6: Generate personalized emails
+    // Step 6: Generate personalized emails WITH competition report baked in
     if (needsHelp.length > 0) {
       const descriptions = needsHelp
         .map((p, i) => {
           let situation = ""
           if (p.webPresence === "none") situation = "NO WEBSITE at all"
-          else if (p.webPresence === "facebook-only") situation = "Only has a Facebook/social page, no real website"
+          else if (p.webPresence === "facebook-only") situation = "Only has Facebook/social page, no real website"
           else if (p.webPresence === "dead-site") situation = `Website (${p.website}) — ${p.siteStatus}`
-          return `${i + 1}. ${p.name} - ${p.address}. Phone: ${p.phone || "unknown"}. Rating: ${p.rating || "none"} (${p.reviewCount || 0} reviews). Situation: ${situation}.`
+          return `${i + 1}. ${p.name} - ${p.address}. Phone: ${p.phone || "unknown"}. Rating: ${p.rating || "none"} (${p.reviewCount || 0} reviews). Situation: ${situation}. Competition: ${p.competitorContext}`
         })
         .join("\n")
 
       const prompt = `You write cold outreach emails for FundyLaunch, a web agency in Atlantic Canada building websites for local trades businesses.
 
-Write personalized emails for each prospect. Each email offers a FREE competition report showing how they compare to other ${trade} in ${location}.
+Write personalized emails for each prospect. Each email includes a MINI competition report — 2-3 bullet points showing how their competitors are ahead of them online. Then offer a full free detailed report if they're interested.
 
 Rules:
-- Short, casual, not salesy. Like a local reaching out.
+- Short, casual, not salesy. Like a local reaching out who did some research.
 - Reference their specific situation (no website, dead website, Facebook only)
-- Mention their rating/reviews if good
-- Hook: FREE competition report showing how they stack up against competitors
-- CTA: reply or quick call
+- Include 2-3 quick competition facts (competitors who have sites, their ratings, their review counts)
+- Mention their rating/reviews if good — frame it as "you're doing great work but invisible online"
+- Hook: "I put together a quick competition snapshot" + offer full free report
+- CTA: reply for the full report or a quick call
 - Sign off as Corey from FundyLaunch (fundylaunch.com)
 - No "I hope this finds you well"
-- Keep each email under 130 words
+- Keep each email 100-150 words
 - Mention you build sites for trades in NB
+
+Competition data for context:
+${competitionSummary}
 
 Return ONLY a valid JSON array. Each object: {"index": number, "subject": "string", "body": "string"}
 No markdown, no explanation.
@@ -232,7 +261,7 @@ ${descriptions}`
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 4000 },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 5000 },
           }),
         }
       )
@@ -255,13 +284,17 @@ ${descriptions}`
       }
     }
 
+    // Clean up response (remove internal fields)
+    const cleanProspects: Prospect[] = needsHelp.map(({ isProspect, ...p }) => p)
+
     return NextResponse.json({
       location,
       trade,
-      totalFound: prospects.length,
+      totalFound: allBusinesses.length,
       needsHelp: needsHelp.length,
-      withSite: prospects.length - needsHelp.length,
-      prospects: needsHelp,
+      withSite: withSites.length,
+      competitionSummary,
+      prospects: cleanProspects,
     })
   } catch (error) {
     console.error("Prospect error:", error)

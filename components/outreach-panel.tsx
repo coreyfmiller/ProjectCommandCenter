@@ -28,6 +28,7 @@ interface Prospect {
   webPresence: "website" | "facebook-only" | "dead-site" | "none"
   siteStatus?: string
   foundEmails: string[]
+  competitorContext?: string
   generatedEmail?: { subject: string; body: string }
 }
 
@@ -51,7 +52,7 @@ export function OutreachPanel() {
   const [emails, setEmails] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null)
-  const [searchMeta, setSearchMeta] = useState<{ totalFound: number; needsHelp: number; withSite: number } | null>(null)
+  const [searchMeta, setSearchMeta] = useState<{ totalFound: number; needsHelp: number; withSite: number; competitionSummary?: string } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
@@ -91,6 +92,7 @@ export function OutreachPanel() {
           totalFound: data.totalFound,
           needsHelp: data.needsHelp,
           withSite: data.withSite,
+          competitionSummary: data.competitionSummary,
         })
         // Auto-populate emails from foundEmails and auto-select those with emails
         const autoEmails: Record<string, string> = {}
@@ -225,9 +227,14 @@ export function OutreachPanel() {
         </div>
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
         {searchMeta && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Found {searchMeta.totalFound} businesses • {searchMeta.withSite} have working sites (skipped) • <span className="text-primary font-medium">{searchMeta.needsHelp} need help</span>
-          </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Found {searchMeta.totalFound} businesses • {searchMeta.withSite} have working sites (skipped) • <span className="text-primary font-medium">{searchMeta.needsHelp} need help</span>
+            </p>
+            {searchMeta.competitionSummary && (
+              <p className="text-xs text-muted-foreground italic">{searchMeta.competitionSummary}</p>
+            )}
+          </div>
         )}
       </div>
 
