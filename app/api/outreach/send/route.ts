@@ -5,6 +5,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || ""
 const HISTORY_KEY = "command-center/outreach-history.json"
 
 interface SendRequest {
+  senderEmail?: string
   prospects: {
     name: string
     email: string
@@ -30,7 +31,7 @@ interface HistoryEntry {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prospects }: SendRequest = await req.json()
+    const { prospects, senderEmail }: SendRequest = await req.json()
 
     if (!prospects || prospects.length === 0) {
       return NextResponse.json({ error: "No prospects to email" }, { status: 400 })
@@ -39,6 +40,15 @@ export async function POST(req: NextRequest) {
     if (!RESEND_API_KEY) {
       return NextResponse.json({ error: "Resend not configured" }, { status: 500 })
     }
+
+    // Determine sender
+    const validSenders: Record<string, string> = {
+      "hello@fundylaunch.com": "Corey at FundyLaunch",
+      "hello@fundylogic.com": "Corey at FundyLogic",
+    }
+    const fromEmail = senderEmail && validSenders[senderEmail] ? senderEmail : "hello@fundylaunch.com"
+    const fromName = validSenders[fromEmail]
+    const from = `${fromName} <${fromEmail}>`
 
     const results: { name: string; status: string; error?: string }[] = []
 
@@ -51,7 +61,7 @@ export async function POST(req: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Corey at FundyLaunch <hello@fundylaunch.com>",
+            from,
             to: prospect.email,
             subject: prospect.subject,
             text: prospect.body,

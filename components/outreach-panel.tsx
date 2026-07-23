@@ -15,6 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   History,
+  AlertCircle,
+  Pencil,
 } from "lucide-react"
 
 interface Prospect {
@@ -43,6 +45,15 @@ interface HistoryEntry {
   status: "sent" | "failed"
 }
 
+const SENDER_OPTIONS = [
+  { label: "Corey @ FundyLaunch", value: "hello@fundylaunch.com", name: "Corey at FundyLaunch" },
+  { label: "Corey @ FundyLogic", value: "hello@fundylogic.com", name: "Corey at FundyLogic" },
+]
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 export function OutreachPanel() {
   const [trade, setTrade] = useState("")
   const [location, setLocation] = useState("")
@@ -50,13 +61,17 @@ export function OutreachPanel() {
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [emails, setEmails] = useState<Record<string, string>>({})
+  const [subjects, setSubjects] = useState<Record<string, string>>({})
+  const [bodies, setBodies] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null)
   const [searchMeta, setSearchMeta] = useState<{ totalFound: number; needsHelp: number; withSite: number; competitionSummary?: string } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [error, setError] = useState("")
+  const [senderEmail, setSenderEmail] = useState(SENDER_OPTIONS[0].value)
 
   useEffect(() => {
     fetch("/api/outreach/send")
@@ -72,6 +87,8 @@ export function OutreachPanel() {
     setProspects([])
     setSelected(new Set())
     setEmails({})
+    setSubjects({})
+    setBodies({})
     setSendResult(null)
     setSearchMeta(null)
 
@@ -86,7 +103,7 @@ export function OutreachPanel() {
       if (data.error) {
         setError(data.error)
       } else {
-        const foundProspects = data.prospects || []
+        const foundProspects: Prospect[] = data.prospects || []
         setProspects(foundProspects)
         setSearchMeta({
           totalFound: data.totalFound,
@@ -94,16 +111,24 @@ export function OutreachPanel() {
           withSite: data.withSite,
           competitionSummary: data.competitionSummary,
         })
-        // Auto-populate emails from foundEmails and auto-select those with emails
+        // Auto-populate emails and email content
         const autoEmails: Record<string, string> = {}
+        const autoSubjects: Record<string, string> = {}
+        const autoBodies: Record<string, string> = {}
         const autoSelected = new Set<string>()
-        foundProspects.forEach((p: Prospect) => {
+        foundProspects.forEach((p) => {
           if (p.foundEmails && p.foundEmails.length > 0) {
             autoEmails[p.id] = p.foundEmails[0]
             autoSelected.add(p.id)
           }
+          if (p.generatedEmail) {
+            autoSubjects[p.id] = p.generatedEmail.subject
+            autoBodies[p.id] = p.generatedEmail.body
+          }
         })
         setEmails(autoEmails)
+        setSubjects(autoSubjects)
+        setBodies(autoBodies)
         setSelected(autoSelected)
       }
     } catch {
@@ -128,14 +153,22 @@ export function OutreachPanel() {
     }
   }
 
+  // Validation: prospect is ready to send only if it has valid email + subject + body
+  const isReadyToSend = (p: Prospect) => {
+    return selected.has(p.id) && isValidEmail(emails[p.id] || "") && (subjects[p.id] || "").trim() && (bodies[p.id] || "").trim()
+  }
+
+  const readyToSend = prospects.filter(isReadyToSend).length
+  const selectedMissingEmail = prospects.filter((p) => selected.has(p.id) && !isValidEmail(emails[p.id] || "")).length
+
   const handleSend = async () => {
     const toSend = prospects
-      .filter((p) => selected.has(p.id) && p.generatedEmail && emails[p.id])
+      .filter(isReadyToSend)
       .map((p) => ({
         name: p.name,
         email: emails[p.id],
-        subject: p.generatedEmail!.subject,
-        body: p.generatedEmail!.body,
+        subject: subjects[p.id],
+        body: bodies[p.id],
         phone: p.phone,
         address: p.address,
         trade,
@@ -149,7 +182,7 @@ export function OutreachPanel() {
       const res = await fetch("/api/outreach/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prospects: toSend }),
+        body: JSON.stringify({ prospects: toSend, senderEmail }),
       })
       const data = await res.json()
       setSendResult({ sent: data.sent, failed: data.failed })
@@ -190,8 +223,6 @@ export function OutreachPanel() {
         return "Has website"
     }
   }
-
-  const readyToSend = prospects.filter((p) => selected.has(p.id) && p.generatedEmail && emails[p.id]).length
 
   return (
     <div className="space-y-6">
@@ -257,100 +288,171 @@ export function OutreachPanel() {
           </div>
 
           <div className="space-y-2">
-            {prospects.map((p) => (
-              <div key={p.id} className="rounded-lg border border-border bg-background p-3">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(p.id)}
-                    onChange={() => toggleSelect(p.id)}
-                    className="mt-1 rounded border-border"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm text-foreground">{p.name}</span>
-                      <span className="flex items-center gap-1 text-xs">
-                        {presenceIcon(p)}
-                        <span className="text-muted-foreground">{presenceLabel(p)}</span>
-                      </span>
-                      {p.rating && (
-                        <span className="text-xs text-muted-foreground">
-                          ⭐ {p.rating} ({p.reviewCount} reviews)
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{p.address}</p>
-                    {p.phone && <p className="text-xs text-muted-foreground">{p.phone}</p>}
+            {prospects.map((p) => {
+              const hasValidEmail = isValidEmail(emails[p.id] || "")
+              const hasContent = (subjects[p.id] || "").trim() && (bodies[p.id] || "").trim()
+              const isExpanded = expandedId === p.id
+              const isEditing = editingId === p.id
 
-                    {/* Email input */}
-                    {selected.has(p.id) && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="email"
-                            placeholder="Enter their email address to send"
-                            value={emails[p.id] || ""}
-                            onChange={(e) => setEmails((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                            className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                          />
-                          {p.foundEmails && p.foundEmails.length > 0 && (
-                            <span className="shrink-0 text-[10px] text-green-500 font-medium">Auto-found</span>
+              return (
+                <div key={p.id} className={`rounded-lg border p-3 ${selected.has(p.id) && !hasValidEmail ? "border-yellow-500/50 bg-yellow-500/5" : "border-border bg-background"}`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.id)}
+                      onChange={() => toggleSelect(p.id)}
+                      className="mt-1 rounded border-border"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-foreground">{p.name}</span>
+                        <span className="flex items-center gap-1 text-xs">
+                          {presenceIcon(p)}
+                          <span className="text-muted-foreground">{presenceLabel(p)}</span>
+                        </span>
+                        {p.rating && (
+                          <span className="text-xs text-muted-foreground">
+                            ⭐ {p.rating} ({p.reviewCount} reviews)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{p.address}</p>
+                      {p.phone && <p className="text-xs text-muted-foreground">{p.phone}</p>}
+
+                      {/* Email input — always visible when selected */}
+                      {selected.has(p.id) && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="email"
+                              placeholder="Recipient email (required)"
+                              value={emails[p.id] || ""}
+                              onChange={(e) => setEmails((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                              className={`w-full rounded border px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 ${
+                                emails[p.id] && !hasValidEmail ? "border-red-500 bg-red-500/5" : "border-border bg-muted"
+                              }`}
+                            />
+                            {p.foundEmails && p.foundEmails.length > 0 && (
+                              <span className="shrink-0 text-[10px] text-green-500 font-medium">Auto-found</span>
+                            )}
+                            {selected.has(p.id) && !hasValidEmail && (
+                              <AlertCircle className="size-4 text-yellow-500 shrink-0" title="Need valid email to send" />
+                            )}
+                          </div>
+                          {p.foundEmails && p.foundEmails.length > 1 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {p.foundEmails.slice(1).map((e) => (
+                                <button
+                                  key={e}
+                                  onClick={() => setEmails((prev) => ({ ...prev, [p.id]: e }))}
+                                  className="text-[10px] text-primary hover:underline"
+                                >
+                                  alt: {e}
+                                </button>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        {p.foundEmails && p.foundEmails.length > 1 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {p.foundEmails.slice(1).map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => setEmails((prev) => ({ ...prev, [p.id]: e }))}
-                                className="text-[10px] text-primary hover:underline"
-                              >
-                                alt: {e}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      )}
 
-                    {/* Email preview */}
-                    {p.generatedEmail && (
-                      <div className="mt-2">
-                        <button
-                          onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
-                          className="flex items-center gap-1 text-xs text-primary hover:underline"
-                        >
-                          <Mail className="size-3" />
-                          Preview email
-                          {expandedId === p.id ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-                        </button>
-                        {expandedId === p.id && (
-                          <div className="mt-2 rounded border border-border bg-muted/50 p-3 text-xs space-y-1">
-                            <p className="font-medium text-foreground">Subject: {p.generatedEmail.subject}</p>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{p.generatedEmail.body}</p>
+                      {/* Email preview / edit */}
+                      {(subjects[p.id] || bodies[p.id]) && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <Mail className="size-3" />
+                              {isExpanded ? "Hide" : "Preview"} email
+                              {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                            </button>
+                            <button
+                              onClick={() => { setEditingId(isEditing ? null : p.id); setExpandedId(p.id) }}
+                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="size-3" />
+                              {isEditing ? "Done" : "Edit"}
+                            </button>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          {isExpanded && (
+                            <div className="mt-2 rounded border border-border bg-muted/50 p-3 text-xs space-y-2">
+                              {isEditing ? (
+                                <>
+                                  <div>
+                                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
+                                    <input
+                                      type="text"
+                                      value={subjects[p.id] || ""}
+                                      onChange={(e) => setSubjects((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                                      className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Body</label>
+                                    <textarea
+                                      value={bodies[p.id] || ""}
+                                      onChange={(e) => setBodies((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                                      rows={6}
+                                      className="mt-0.5 w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-foreground resize-y focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="font-medium text-foreground">Subject: {subjects[p.id]}</p>
+                                  <p className="text-muted-foreground whitespace-pre-wrap">{bodies[p.id]}</p>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          {/* Send button */}
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground">
-              {readyToSend} of {selected.size} selected ready to send (need email address)
-            </p>
-            <button
-              onClick={handleSend}
-              disabled={sending || readyToSend === 0}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
-            >
-              {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-              {sending ? "Sending..." : `Send ${readyToSend} Emails`}
-            </button>
+          {/* Send controls */}
+          <div className="mt-4 border-t border-border pt-4 space-y-3">
+            {/* Sender config */}
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-medium text-muted-foreground shrink-0">Send from:</label>
+              <select
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                className="rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+              >
+                {SENDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label} ({opt.value})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Validation warnings */}
+            {selectedMissingEmail > 0 && (
+              <div className="flex items-center gap-2 text-xs text-yellow-600">
+                <AlertCircle className="size-3.5" />
+                {selectedMissingEmail} selected prospect{selectedMissingEmail > 1 ? "s" : ""} missing a valid email — won't be sent
+              </div>
+            )}
+
+            {/* Send button */}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {readyToSend} ready to send (valid email + message)
+              </p>
+              <button
+                onClick={handleSend}
+                disabled={sending || readyToSend === 0}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                {sending ? "Sending..." : `Send ${readyToSend} Email${readyToSend !== 1 ? "s" : ""}`}
+              </button>
+            </div>
           </div>
 
           {sendResult && (
