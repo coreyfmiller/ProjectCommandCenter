@@ -1,4 +1,4 @@
-import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout, ListChecks, Megaphone } from 'lucide-react'
+import { Rocket, Target, Archive, CalendarRange, Zap, Skull, Users, DollarSign, ExternalLink, Flag, Sprout, ListChecks, Megaphone, Lightbulb } from 'lucide-react'
 import { StatsBar } from '@/components/stats-bar'
 import { FocusCard } from '@/components/focus-card'
 import { ParkedCard } from '@/components/parked-card'
@@ -10,6 +10,7 @@ import { FinancialMilestones } from '@/components/financial-milestones'
 import { SideProjects } from '@/components/side-projects'
 import { TodaySection } from '@/components/today-section'
 import { OutreachPanel } from '@/components/outreach-panel'
+import { IdeaCenter } from '@/components/idea-center'
 import { focusProjects, parkedProjects, killedProjects, clientProjects } from '@/lib/portfolio-data'
 
 function SectionHeading({
@@ -162,6 +163,19 @@ export default function DashboardPage() {
         />
         <div className="mt-6" id="outreach-heading">
           <OutreachPanel />
+        </div>
+      </section>
+
+      {/* Idea Center */}
+      <section className="mt-12" aria-labelledby="ideas-heading">
+        <SectionHeading
+          icon={Lightbulb}
+          eyebrow="Ideas"
+          title="Idea Center"
+          description="Capture ideas. Tag them. Build when the time is right — not before."
+        />
+        <div className="mt-6" id="ideas-heading">
+          <IdeaCenter />
         </div>
       </section>
 
